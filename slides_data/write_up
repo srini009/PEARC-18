@@ -1,0 +1,62 @@
+======= WRITE-UP FOR FIGURES ======
+The MPI_T_infrastructure.png figure describes the overall design of our infraastructure. For the tutorial, we are specifically interested in the design and usage of the plugin infrastructure depicted in figure Plugin_Infrastructure.png.
+Within TAU, we identify and define salient EVENTS of interest, and plugins can register callbacks for these events (full list of events in the journal paper).
+
+Out of all the events supported in TAU, we are interested in the INTERRUPT_TRIGGER event. When PVAR sampling is turned on, TAU installs a signal handler to the SIGUSR signal and samples the MPI_T interface every few seconds (10 seconds default). Every time an interrupt is generated in TAU, this INTERRUPT_TRIGGER is fired, and the callbacks of all plugins that have installed a handler for this event are fired. The autotuning plugin that we describe installs a handler for this event. We shall now describe the autotuning policy in detail.
+
+
+==== AUTOTUNING PLUGIN / POLICY =====
+I have described this in the journal paper thoroughly. Kindly refer to that document for this info.
+
+
+==== EAGER THRESHOLD - BENEFITS (3DStencil trace) ==== 
+The figures Overlap_before.png and Overlap_after.png describe the effect of increasing the Eager threshold for the 3DStencil application (Vampir process summary timeline view). Overlap_after.png shows 20% increase in number of processes inside user code - more "useful" work is done as a result of this. 
+
+
+=== SNAP application and results ===
+
+SNAP is a proxy application from the Los Alamos National Laboratory that is designed to mimic the performance
+characteristics of PARTISN . PARTISN is a neutral particle transport application that solves the linear Boltzmann transport
+equation for determining the number of neutral particles in a multi-dimensional phase space. SNAP is considered to be an
+updated version of the Sweep3D [24] proxy application and can be executed on hybrid architectures. SNAP heavily relies
+on point-to-point communication, and the size of messages transferred is a function of the number of spatial cells per MPI
+process, number of angles per octant, and number of energy groups.
+
+Specifically, a bulk of the point-to-point communication is implemented as a combination of MPI_Isend/MPI_Waitall
+on the sender side, and MPI_Recv on the receiver side. This explicitly allows the opportunity for communication-
+computation overlap on the sender side.
+
+SNAP application relies heavily on point-to-point communication, and the message sizes involved in communication de-
+pend on a number of input factors. We followed the recommended ranges for these input factors:
+* Number of angles per octant (nang) was set to 50
+* Number of energy groups (ng) was set to 150
+* Number of spatial cells per MPI rank was set to 1200
+* Scattering order (nmom) was set to 4
+
+We performed the experiments described below on 1024 cores (64 nodes) of Stampede1. 
+
+We gathered the message sizes involved in MPI communication. SNAP_aggregate_time_spent_MPI.png lists the five MPI functions that account for the
+highest aggregate time spent. MPI_Recv and MPI_Waitall together account for nearly 17% of total application time or
+60% of MPI time. SNAP_message_sizes.png lists the message sizes involved in various MPI routines. It is evident that the bulk of messages are
+point-to-point messages with a message size of roughly 18,300 bytes.
+
+The fact that the application spends a lot of its communication time inside MPI_Recv (callsite ID 5 in SNAP_aggregate_time_spent_MPI.png ) and
+MPI_Waitall (callsite ID 16 in SNAP_aggregate_time_spent_MPI.png ) suggests that the receiver in the point-to-point communication is generally late as
+compared to the posting of the corresponding MPI_Isend (callsite ID 1 in SNAP_aggregate_time_spent_MPI.png ) operation. As a result of the relatively
+large message size of 18KB involved in this case, the data is transferred using the Rendezvous protocol after the receive is
+posted — in this specific context, this data transfer happens when the sender reaches the MPI_Waitall call.
+
+Even though there is an opportunity for communication-computation overlap through the use of non-blocking routines, no overlap actu-
+ally happens in the application because of the conditions necessary for the transfer of large messages using the Rendezvous
+protocol.
+
+By increasing both the inter-node and intra-node Eager threshold to 20KB, the transfer of these point-to-point mes-
+sages is initiated when the sender posts the MPI_Isend operation. As a result, the application sees an increase in
+communication-computation overlap, and this manifests itself as a reduction in overall application runtime.
+
+The second row of SNAP_results_eager.png summarizes this improvement in performance with 1024 processes — we note a reduction of 10.7% in appli-
+cation runtime when increasing the Eager threshold to 20 KB. However, increasing the Eager threshold also meant that the
+total VBUF memory usage across all processes went up by 12%.
+The TAU autotuning plugin ensures that VBUFs from unused pools are freed to offset this increase in total VBUF memory
+usage. The third row of SNAP_results_eager.png summarizes the reduction in total VBUF memory usage when the TAU autotuning plugin is
+enabled. It is important to note that the plugin does not disturb application runtime even at this scale.
