@@ -1,0 +1,101 @@
+\documentclass[preprint]{elsarticle}
+\usepackage{booktabs} % For formal tables
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[utf8]{inputenc}
+\usepackage{url}
+\usepackage{float}
+\usepackage{lineno,hyperref}
+\modulolinenumbers[5]
+
+\journal{Parallel Computing}
+
+%%%%%%%%%%%%%%%%%%%%%%%
+%% Elsevier bibliography styles
+%%%%%%%%%%%%%%%%%%%%%%%
+%% To change the style, put a % in front of the second line of the current style and
+%% remove the % from the second line of the style you would like to use.
+%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Numbered
+%\bibliographystyle{model1-num-names}
+
+%% Numbered without titles
+%\bibliographystyle{model1a-num-names}
+
+%% Harvard
+%\bibliographystyle{model2-names.bst}\biboptions{authoryear}
+
+%% Vancouver numbered
+%\usepackage{numcompress}\bibliographystyle{model3-num-names}
+
+%% Vancouver name/year
+%\usepackage{numcompress}\bibliographystyle{model4-names}\biboptions{authoryear}
+
+%% APA style
+%\bibliographystyle{model5-names}\biboptions{authoryear}
+
+%% AMA style
+%\usepackage{numcompress}\bibliographystyle{model6-num-names}
+
+%% `Elsevier LaTeX' style
+\bibliographystyle{elsarticle-num}
+%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\quotes}[1]{``#1''}
+\begin{document}
+
+\begin{frontmatter}
+
+\title{MPI Performance Engineering with the MPI Tool Interface: the Integration of MVAPICH and TAU}
+
+%% Group authors per affiliation:
+\author[uoaddress]{Srinivasan Ramesh\corref{correspondingauthor}}
+\cortext[correspondingauthor]{Corresponding Author}
+\ead{sramesh@cs.uoregon.edu}
+
+\author[uoaddress]{Aur\`{e}le Mah\'{e}o}
+\ead{amaheo@uoregon.edu}
+
+\author[uoaddress]{Sameer Shende}
+\ead{sameer@cs.uoregon.edu}
+
+\author[uoaddress]{Allen D. Malony}
+\ead{malony@cs.uoregon.edu}
+
+\author[osuaddress]{Hari Subramoni}
+\ead{subramoni.1@osu.edu}
+
+\author[osuaddress]{Amit Ruhela}
+\ead{ruhela.2@osu.edu}
+
+\author[osuaddress]{Dhabaleswar K. (DK) Panda}
+\ead{panda@cse.ohio-state.edu}
+
+\address[uoaddress]{Dept of Computer and Information Science, University of Oregon, 1477 E 13th Ave, Eugene, Oregon 97403, USA}
+\address[osuaddress]{Dept of Computer Science and Engineering, The Ohio State University, 2015 Neil Ave, Columbus, Ohio 43210, USA}
+
+\begin{abstract}
+The desire for high performance on scalable parallel systems is increasing the complexity and tunability of MPI implementations. The MPI Tools Information Interface (MPI\_T) introduced as part of the MPI 3.0 standard provides an opportunity for performance tools and external software to introspect and understand MPI runtime behavior at a deeper level to detect scalability issues. The interface also provides a mechanism to fine-tune the performance of the MPI library dynamically at runtime.
+In this paper, we propose an infrastructure that extends existing components --- TAU, MVAPICH2, and BEACON to take advantage of the MPI\_T interface and offer runtime introspection, online monitoring, recommendation generation, and autotuning capabilities.
+We validate our design by developing optimizations for a combination of production and synthetic applications. 
+Using our infrastructure, we implement an autotuning policy for AmberMD (a molecular dynamics package) that monitors and reduces the internal memory footprint of the MVAPICH2 MPI library without affecting performance.
+For applications such as MiniAMR whose collective communication is latency sensitive, our infrastructure is able to generate recommendations to enable hardware offloading of collectives supported by MVAPICH2. By implementing this recommendation, the MPI time for MiniAMR at 224 processes reduces by 15\%.
+\end{abstract}
+
+\begin{keyword}
+	\texttt{MPI\_T}\sep runtime introspection\sep autotuning\sep performance engineering\sep performance recommendations\sep TAU\sep MVAPICH2\sep BEACON
+\end{keyword}
+
+\end{frontmatter}
+
+\linenumbers
+
+\input{body}
+
+\section*{References}
+
+\bibliography{bibfile}
+
+\end{document}
